@@ -1,0 +1,20 @@
+# Node modules
+node_modules/
+backend/node_modules/
+frontend/management-syst-app/node_modules/
+
+# Env files
+.env
+frontend/management-syst-app/.env
+backend/.env
+
+# Logs
+logs/
+*.log
+
+# Build files
+backend/build/
+dist/
+
+# DB files (if any)
+*.sqlite
