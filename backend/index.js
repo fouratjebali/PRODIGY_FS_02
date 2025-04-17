@@ -7,6 +7,7 @@ const app = express();
 const loginRoutes = require('./routes/login'); 
 const adminRoutes = require('./routes/admin');
 const statsRoutes = require('./routes/stats');
+const employeeRoutes = require("./routes/employee");
 require('dotenv').config();
 const JWT_SECRET = process.env.JWT_SECRET || "yourSuperSecretKey";
 
@@ -24,6 +25,7 @@ app.use(helmet());
 app.use('/api/login', loginRoutes); 
 app.use('/api/admin', adminRoutes);
 app.use('/api', statsRoutes);
+app.use("/api/employees", employeeRoutes);
 
 
 app.use((req, res, next) => {
