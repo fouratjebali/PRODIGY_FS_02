@@ -25,7 +25,39 @@ router.get('/stats', async (req, res) => {
   } catch (err) {
     console.error('Error fetching stats:', err);
     res.status(500).json({ error: 'Failed to fetch stats' });
+
+    
   }
 });
 
+router.get("/dept", async (req, res) => {
+  try {
+    const departments = await pool.query("SELECT dept_no, dept_name FROM department");
+    res.status(200).json(departments);
+  } catch (error) {
+    console.error("Error fetching departments:", error);
+    res.status(500).json({ message: "Failed to fetch departments" });
+  }
+});
+
+
+router.get("/salary", async (req, res) => {
+  try {
+    const salaries = await pool.query("SELECT * FROM salary");
+    res.status(200).json(salaries);
+  } catch (error) {
+    console.error("Error fetching departments:", error);
+    res.status(500).json({ message: "Failed to fetch departments" });
+  }
+});
+
+router.get("/managers", async (req, res) => {
+  try {
+    const managers = await pool.query("SELECT * FROM dept_manager");
+    res.status(200).json(managers);
+  } catch (error) {
+    console.error("Error fetching departments:", error);
+    res.status(500).json({ message: "Failed to fetch departments" });
+  }
+});
 module.exports = router;

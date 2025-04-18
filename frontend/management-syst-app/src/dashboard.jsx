@@ -25,6 +25,7 @@ const Dashboard = () => {
     lastName: "",
   });
   const [searchResults, setSearchResults] = useState([]);
+  const [viewEmployee, setViewEmp] = useState([]);
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -32,6 +33,31 @@ const Dashboard = () => {
     gender: "M",
     hire_date: "",
   });
+  const [isSearchClicked, setIsSearchClicked] = useState(false);
+  const [departments, setDepartments] = useState([]);
+  const [salaries, setSalaries] = useState([]);
+  const [managers, setViewManagers] = useState([]);
+
+  useEffect(() => {
+    if (activeSection === "search") {
+      setSearchCriteria({ employeeId: "", firstName: "", lastName: "" });
+      setSearchResults([]);
+    } else if (activeSection === "add") {
+      setFormData({
+        first_name: "",
+        last_name: "",
+        birth_date: "",
+        gender: "M",
+        hire_date: "",
+      });
+    } else if (activeSection === "update") {
+      setEmployeeId("");
+      setEmployee(null);
+    } else if (activeSection === "delete") {
+      setEmployeeId("");
+      setEmployee(null);
+    }
+  }, [activeSection]);
 
   useEffect(() => {
     const fetchAdminDetails = async () => {
@@ -68,13 +94,86 @@ const Dashboard = () => {
         console.error("Error fetching stats:", error);
       }
     };
+    const fetchAllEmployees = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/api/employees", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+        });
+        setViewEmp(response.data);
+      } catch (error) {
+        console.error("Error fetching employees:", error);
+      }
+    }
 
 
     fetchAdminDetails();
     fetchStats();
+    fetchAllEmployees();
   }, []);
 
+  useEffect(() => {
+    if (activeSection === "viewDept") {
+      fetchDepartments();
+    }
+  }, [activeSection]);
+
+  useEffect(() => {
+    if (activeSection === "viewSalary") {
+      fetchSalaries();
+    }
+  }, [activeSection]);
+
+  useEffect(() => {
+    if (activeSection === "viewManagers") {
+      fetchManagers();
+    }
+  }, [activeSection]);
+
+  const fetchManagers = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/managers", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
+      });
+      setViewManagers(response.data.rows);
+
+    }catch (error) {
+      console.error("Error fetching managers:", error);
+    }
+  }
+
+  const fetchSalaries = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/salary", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
+      });
+      setSalaries(response.data.rows);
+    } catch (error) {
+      console.error("Error fetching salaries:", error);
+    }
+  }
+
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/dept", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
+      });
+      setDepartments(response.data.rows);
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+    }
+  };
+
   const handleSearchEmployeeById = async (e) => {
+    setIsSearchClicked(true);
     e.preventDefault();
     try {
       const response = await axios.get(`http://localhost:5000/api/employees/${employeeId}`, {
@@ -105,6 +204,7 @@ const Dashboard = () => {
   };
   const handleSearchEmployee = async (e) => {
     e.preventDefault();
+    setIsSearchClicked(true);
     try {
       const response = await axios.post("http://localhost:5000/api/employees/search", searchCriteria, {
         headers: {
@@ -136,6 +236,25 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Error adding employee:", error);
       alert("Failed to add employee. Please try again.");
+    }
+  };
+
+  const handleDeleteEmployee = async (employeeId) => {
+    try {
+      const confirmDelete = window.confirm("Are you sure you want to delete this employee?");
+      if (!confirmDelete) return;
+
+      await axios.delete(`http://localhost:5000/api/employees/${employeeId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
+      });
+
+      alert("Employee deleted successfully!");
+      setViewEmp((prevEmployees) => prevEmployees.filter((emp) => emp.emp_no !== employeeId));
+    } catch (error) {
+      console.error("Error deleting employee:", error);
+      alert("Failed to delete employee. Please try again.");
     }
   };
 
@@ -173,12 +292,6 @@ const Dashboard = () => {
             onClick={() => setActiveSection("delete")}
           >
             <i className="fas fa-user"></i> Delete Employee
-          </li>
-          <li
-            className={activeSection === "notifications" ? "active" : ""}
-            onClick={() => setActiveSection("notifications")}
-          >
-            <i className="fas fa-bell"></i> Notifications
           </li>
         </ul>
         <footer className="sidebar-footer">
@@ -221,7 +334,13 @@ const Dashboard = () => {
                       <p className="text-2xl font-bold">{stats.totalEmployees}</p>
                     </div>
                   </div>
-                  <a href="#" className="text-[#6D28D9] text-sm mt-4 block">View all</a>
+                  <a
+                    href="#"
+                    className={`text-[#6D28D9] text-sm mt-4 block ${activeSection === "viewEmp" ? "active" : ""}`}
+                    onClick={() => setActiveSection("viewEmp")}
+                  >
+                    View all
+                  </a>
                 </div>
 
                 {/* Card 2 */}
@@ -235,7 +354,12 @@ const Dashboard = () => {
                       <p className="text-2xl font-bold">{stats.totalDepartments}</p>
                     </div>
                   </div>
-                  <a href="#" className="text-[#6D28D9] text-sm mt-4 block">View all</a>
+                  <a
+                    className={`text-[#6D28D9] text-sm mt-4 block ${activeSection === "viewDept" ? "active" : ""}`}
+                    onClick={() => setActiveSection("viewDept")}
+                  >
+                    View all
+                  </a>
                 </div>
 
                 {/* Card 3 */}
@@ -249,7 +373,13 @@ const Dashboard = () => {
                       <p className="text-2xl font-bold">${stats.totalSalaries}</p>
                     </div>
                   </div>
-                  <a href="#" className="text-[#6D28D9] text-sm mt-4 block">View all</a>
+                  <a
+                    href="#"
+                    className={`text-[#6D28D9] text-sm mt-4 block ${activeSection === "viewSalary" ? "active" : ""}`}
+                    onClick={() => setActiveSection("viewSalary")}
+                  >
+                    View all
+                  </a>
                 </div>
               </div>
 
@@ -266,7 +396,13 @@ const Dashboard = () => {
                       <p className="text-2xl font-bold">{stats.totalManagers}</p>
                     </div>
                   </div>
-                  <a href="#" className="text-[#6D28D9] text-sm mt-4 block">View all</a>
+                  <a
+                    href="#"
+                    className={`text-[#6D28D9] text-sm mt-4 block ${activeSection === "viewManagers" ? "active" : ""}`}
+                    onClick={() => setActiveSection("viewManagers")}
+                  >
+                    View all
+                  </a>
                 </div>
 
                 <div className="bg-white shadow-md rounded-lg p-6 w-full">
@@ -294,6 +430,41 @@ const Dashboard = () => {
                   </div>
                   <a href="#" className="text-[#6D28D9] text-sm mt-4 block">View all</a>
                 </div>
+              </div>
+            </div>
+          )}
+          {activeSection === "viewEmp" && (
+            <div className="view-employee-content mt-7 max-w-7xl mx-auto p-6 bg-white shadow-md rounded-lg">
+              <h2 className="text-2xl font-bold mb-6 text-center">All Employees</h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full border-collapse border border-gray-300">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="border border-gray-300 px-4 py-2 text-left">ID</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">First Name</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">Last Name</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">Birth Date</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">Gender</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">Hire Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {viewEmployee.map((employee) => (
+                      <tr key={employee.emp_no} className="hover:bg-gray-50">
+                        <td className="border border-gray-300 px-4 py-2">{employee.emp_no}</td>
+                        <td className="border border-gray-300 px-4 py-2">{employee.first_name}</td>
+                        <td className="border border-gray-300 px-4 py-2">{employee.last_name}</td>
+                        <td className="border border-gray-300 px-4 py-2">
+                          {employee.birth_date ? employee.birth_date.split("T")[0] : ""}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2">{employee.gender}</td>
+                        <td className="border border-gray-300 px-4 py-2">
+                          {employee.hire_date ? employee.hire_date.split("T")[0] : ""}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
@@ -362,7 +533,7 @@ const Dashboard = () => {
                 </div>
               </form>
 
-              {searchResults && searchResults.length > 0 && (
+              {searchResults && searchResults.length > 0 ? (
                 <div className="mt-6">
                   <h3 className="text-lg font-bold mb-4">Search Results:</h3>
                   <ul className="space-y-2">
@@ -377,12 +548,18 @@ const Dashboard = () => {
                     ))}
                   </ul>
                 </div>
+              ) : (
+                isSearchClicked && (
+                  <div className="mt-6 text-center text-red-600">
+                    <p>No employee found with the given criteria.</p>
+                  </div>
+                )
               )}
             </div>
           )}
           {activeSection === "add" && (
             <div className="add-employee-content mt-7 max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg mt-7">
-              <h2 className="text-2xl font-bold mb-6 text-center">
+              <h2 className="text-2xl font-bold mb-6 text-center">Add Employee
               </h2>
               <form onSubmit={handleFormSubmit} className="space-y-4">
                 {/* First Name */}
@@ -394,7 +571,7 @@ const Dashboard = () => {
                     type="text"
                     id="firstName"
                     name="first_name"
-                    value={formData.first_name} 
+                    value={formData.first_name}
                     onChange={(e) => setFormData({ ...formData, first_name: e.target.value })} // Update formData
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm h-10"
                     placeholder="Enter first name"
@@ -410,7 +587,7 @@ const Dashboard = () => {
                     type="text"
                     id="lastName"
                     name="last_name"
-                    value={formData.last_name} 
+                    value={formData.last_name}
                     onChange={(e) => setFormData({ ...formData, last_name: e.target.value })} // Update formData
                     className="h-10 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     placeholder="Enter last name"
@@ -426,7 +603,7 @@ const Dashboard = () => {
                     type="date"
                     id="birthDate"
                     name="birth_date"
-                    value={formData.birth_date} 
+                    value={formData.birth_date}
                     onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })} // Update formData
                     className="mt-1 h-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   />
@@ -458,7 +635,7 @@ const Dashboard = () => {
                     type="date"
                     id="hireDate"
                     name="hire_date"
-                    value={formData.hire_date} 
+                    value={formData.hire_date}
                     onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })} // Update formData
                     className="mt-1 h-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                   />
@@ -508,6 +685,11 @@ const Dashboard = () => {
                   </button>
                 </div>
               </form>
+              {!employee && isSearchClicked && (
+                <div className="mt-6 text-center text-red-600">
+                  <p>No employee found with the given criteria.</p>
+                </div>
+              )}
 
               {/* Update Employee Form */}
               {employee && (
@@ -601,11 +783,135 @@ const Dashboard = () => {
           )}
 
           {activeSection === "delete" && (
-            <div className="delete-employee-content">
-              <h2>Delete Employee</h2>
-              <p>Delete an employee.</p>
+            <div className="delete-employee-content mt-10 max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
+              <h2 className="text-2xl font-bold mb-6 text-center">Delete Employee</h2>
+              <form
+                onSubmit={handleSearchEmployeeById}
+                className="space-y-4 mb-6"
+              >
+                <div>
+                  <label htmlFor="employeeId" className="block text-sm font-medium text-gray-700">
+                    Employee ID
+                  </label>
+                  <input
+                    type="number"
+                    id="employeeId"
+                    name="employeeId"
+                    value={employeeId}
+                    onChange={(e) => setEmployeeId(e.target.value)}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    placeholder="Enter employee ID"
+                  />
+                </div>
+                <div>
+                  <button
+                    type="submit"
+                    className="w-full bg-[#6D28D9] text-white py-2 px-4 rounded-md hover:bg-[#4C1D95] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    Search Employee
+                  </button>
+                </div>
+              </form>
+
+              {employee && (
+                <div className="bg-gray-100 p-4 rounded-md mt-4 shadow-md">
+                  <h3 className="text-lg font-bold mb-4">Employee Details</h3>
+                  <p><strong>ID:</strong> {employee.emp_no}</p>
+                  <p><strong>First Name:</strong> {employee.first_name}</p>
+                  <p><strong>Last Name:</strong> {employee.last_name}</p>
+                  <p><strong>Birth Date:</strong> {employee.birth_date ? employee.birth_date.split("T")[0] : "N/A"}</p>
+                  <p><strong>Gender:</strong> {employee.gender}</p>
+                  <p><strong>Hire Date:</strong> {employee.hire_date ? employee.hire_date.split("T")[0] : "N/A"}</p>
+                  <div className="mt-4">
+                    <p className="text-red-800">Are you sure you want to delete this employee?</p>
+                    <button
+                      onClick={() => handleDeleteEmployee(employee.emp_no)}
+                      className="mt-2 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700"
+                    >
+                      Delete Employee
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
+          {activeSection === "viewDept" && (
+            <div className="view-department-content mt-7 max-w-7xl mx-auto p-6 bg-white shadow-md rounded-lg">
+              <h2 className="text-2xl font-bold mb-6 text-center">All Departments</h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full border-collapse border border-gray-300">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="border border-gray-300 px-4 py-2 text-left">Department Number</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">Department Name</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {departments.map((dept) => (
+                      <tr key={dept.dept_no} className="hover:bg-gray-50">
+                        <td className="border border-gray-300 px-4 py-2">{dept.dept_no}</td>
+                        <td className="border border-gray-300 px-4 py-2">{dept.dept_name}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+          {activeSection === "viewSalary" && (
+            <div className="view-salary-content mt-7 max-w-7xl mx-auto p-6 bg-white shadow-md rounded-lg">
+              <h2 className="text-2xl font-bold mb-6 text-center">All Salaries</h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full border-collapse border border-gray-300">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="border border-gray-300 px-4 py-2 text-left">Employee ID</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">Salary</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">From Date</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">To Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {salaries.map((salary) => (
+                      <tr key={salary.emp_no} className="hover:bg-gray-50">
+                        <td className="border border-gray-300 px-4 py-2">{salary.emp_no}</td>
+                        <td className="border border-gray-300 px-4 py-2">${salary.amount}</td>
+                        <td className="border border-gray-300 px-4 py-2">{salary.from_date.split("T")[0]}</td>
+                        <td className="border border-gray-300 px-4 py-2">{salary.to_date.split("T")[0]}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+          {activeSection === "viewManagers" && (
+            <div className="view-managers-content mt-7 max-w-7xl mx-auto p-6 bg-white shadow-md rounded-lg">  
+              <h2 className="text-2xl font-bold mb-6 text-center">All Managers</h2>
+              <div className="overflow-x-auto">
+                <table className="min-w-full border-collapse border border-gray-300">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="border border-gray-300 px-4 py-2 text-left">Manager ID</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">Department Number</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">From Date</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">To Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {managers.map((manager) => (
+                      <tr key={manager.emp_no} className="hover:bg-gray-50">
+                        <td className="border border-gray-300 px-4 py-2">{manager.emp_no}</td>
+                        <td className="border border-gray-300 px-4 py-2">{manager.dept_no}</td>
+                        <td className="border border-gray-300 px-4 py-2">{manager.from_date.split("T")[0]}</td>
+                        <td className="border border-gray-300 px-4 py-2">{manager.to_date.split("T")[0]}</td>
+                      </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>    
+              </div>
+            )}
         </section>
       </main>
     </div>
