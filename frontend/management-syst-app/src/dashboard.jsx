@@ -37,7 +37,39 @@ const Dashboard = () => {
   const [departments, setDepartments] = useState([]);
   const [salaries, setSalaries] = useState([]);
   const [managers, setViewManagers] = useState([]);
+  const [isMessagesPopupVisible, setIsMessagesPopupVisible] = useState(false);
+  const [isNotificationsPopupVisible, setIsNotificationsPopupVisible] = useState(false);
+  const [isProfilePopupVisible, setIsProfilePopupVisible] = useState(false);
 
+  const toggleMessagesPopup = () => {
+    setIsMessagesPopupVisible((prev) => {
+      if (!prev) {
+        setIsNotificationsPopupVisible(false);
+        setIsProfilePopupVisible(false);
+      }
+      return !prev;
+    });
+  };
+  
+  const toggleNotificationsPopup = () => {
+    setIsNotificationsPopupVisible((prev) => {
+      if (!prev) {
+        setIsMessagesPopupVisible(false);
+        setIsProfilePopupVisible(false);
+      }
+      return !prev;
+    });
+  };
+  
+  const toggleProfilePopup = () => {
+    setIsProfilePopupVisible((prev) => {
+      if (!prev) {
+        setIsMessagesPopupVisible(false);
+        setIsNotificationsPopupVisible(false);
+      }
+      return !prev;
+    });
+  };
   useEffect(() => {
     if (activeSection === "search") {
       setSearchCriteria({ employeeId: "", firstName: "", lastName: "" });
@@ -140,7 +172,7 @@ const Dashboard = () => {
       });
       setViewManagers(response.data.rows);
 
-    }catch (error) {
+    } catch (error) {
       console.error("Error fetching managers:", error);
     }
   }
@@ -307,14 +339,43 @@ const Dashboard = () => {
             </button>
           </div>
           <div className="top-bar-icons">
-            <i className="fas fa-envelope"></i>
-            <i className="fas fa-bell"></i>
-            <div className="admin-profile">
-              <img
-                src={adminDetails.profilePicture || "https://via.placeholder.com/40"} // Replace with the admin's profile picture URL
-                alt="Admin"
-              />
-              <span>{adminDetails.username || "Admin Name"}</span>
+            <div className="relative">
+              <i
+                className="fas fa-envelope cursor-pointer"
+                onClick={toggleMessagesPopup}
+              ></i>
+              {isMessagesPopupVisible && (
+                <div className="absolute bg-white shadow-md rounded-md p-4 mt-2 right-0 w-64 h-48">
+                  <p className="text-gray-500 text-sm">There are no messages yet.</p>
+                </div>
+              )}
+            </div>
+            <div className="relative">
+              <i
+                className="fas fa-bell cursor-pointer"
+                onClick={toggleNotificationsPopup}
+              ></i>
+              {isNotificationsPopupVisible && (
+                <div className="absolute bg-white shadow-md rounded-md p-4 mt-2 right-0 w-64 h-48">
+                  <p className="text-gray-500 text-sm">No new notifications.</p>
+                </div>
+              )}
+            </div>
+            <div className="relative" >
+              <div className="admin-profile cursor-pointer" onClick={toggleProfilePopup} >
+                <img
+                  src={adminDetails.profilePicture || "https://via.placeholder.com/40"} // Replace with the admin's profile picture URL
+                  alt="Admin"
+                />
+                <span>{adminDetails.username || "Admin Name"}</span>
+              </div>
+              {isProfilePopupVisible && (
+                <div className="absolute bg-white shadow-md rounded-md p-4 mt-2 right-0 w-64">
+                  <p className="text-gray-500 text-sm mb-3 cursor-pointer hover:text-black">Profile</p>
+                  <p className="text-gray-500 text-sm mb-3 cursor-pointer hover:text-black">Settings</p>
+                  <p className="text-gray-500 text-sm mb-3 cursor-pointer hover:text-black" onClick={handleLogout}>Logout</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -886,7 +947,7 @@ const Dashboard = () => {
             </div>
           )}
           {activeSection === "viewManagers" && (
-            <div className="view-managers-content mt-7 max-w-7xl mx-auto p-6 bg-white shadow-md rounded-lg">  
+            <div className="view-managers-content mt-7 max-w-7xl mx-auto p-6 bg-white shadow-md rounded-lg">
               <h2 className="text-2xl font-bold mb-6 text-center">All Managers</h2>
               <div className="overflow-x-auto">
                 <table className="min-w-full border-collapse border border-gray-300">
@@ -906,12 +967,12 @@ const Dashboard = () => {
                         <td className="border border-gray-300 px-4 py-2">{manager.from_date.split("T")[0]}</td>
                         <td className="border border-gray-300 px-4 py-2">{manager.to_date.split("T")[0]}</td>
                       </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>    
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            )}
+            </div>
+          )}
         </section>
       </main>
     </div>

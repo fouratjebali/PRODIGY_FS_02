@@ -70,32 +70,32 @@ router.delete("/:emp_no", async (req, res) => {
 });
 
 router.post("/search", async (req, res) => {
-    const { employeeId, firstName, lastName } = req.body;
-  
-    try {
-      let query = "SELECT * FROM employee WHERE 1=1";
-      const params = [];
-  
-      if (employeeId) {
-        query += " AND emp_no = $1";
-        params.push(employeeId);
-      }
-      if (firstName) {
-        query += " AND first_name ILIKE $2";
-        params.push(`%${firstName}%`);
-      }
-      if (lastName) {
-        query += " AND last_name ILIKE $3";
-        params.push(`%${lastName}%`);
-      }
-  
-      const result = await pool.query(query, params);
-      res.status(200).json(result.rows);
-    } catch (error) {
-      console.error("Error searching for employees:", error);
-      res.status(500).json({ message: "Internal server error" });
+  const { employeeId, firstName, lastName } = req.body;
+
+  try {
+    let query = "SELECT * FROM employee WHERE 1=1";
+    const params = [];
+
+    if (employeeId) {
+      query += ` AND emp_no = $${params.length + 1}`;
+      params.push(employeeId);
     }
-  });
+    if (firstName) {
+      query += ` AND first_name ILIKE $${params.length + 1}`;
+      params.push(`%${firstName}%`);
+    }
+    if (lastName) {
+      query += ` AND last_name ILIKE $${params.length + 1}`;
+      params.push(`%${lastName}%`);
+    }
+
+    const result = await pool.query(query, params);
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error("Error searching for employees:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 
   router.delete("/:id", async (req, res) => {
     try {
